@@ -1,6 +1,6 @@
 Workshop Notes
 --------------
 
-- Get projector working
-- Install git
+=Things you will need=
+- Git, to download
 - Download project
