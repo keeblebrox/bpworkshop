@@ -44,6 +44,17 @@ public class PlayerMotor : MonoBehaviour {
 	}
 	public PlayerJumping jumping = new PlayerJumping();
 
+	[System.Serializable]
+	public class PlayerShooting {
+		public float shootSpeed = 20.0f;
+		public float shootChargeTime = 2.0f;
+		[System.NonSerialized] public Ball ball = null;
+		[System.NonSerialized] public bool input = false;
+		[System.NonSerialized] public bool inputHeld = false;
+		[System.NonSerialized] public float lastStartTime = 0.0f;
+	}
+	public PlayerShooting shooting = new PlayerShooting();
+
 	public class PlayerGround {
 		public bool grounded = true;		//are we on the ground
 		public Vector3 normal = Vector3.zero;	//ground angle
@@ -60,6 +71,22 @@ public class PlayerMotor : MonoBehaviour {
 		controller = GetComponent<CharacterController>();
 	}
 
+
+	void Update() {
+		if (!shooting.input && shooting.inputHeld) {
+			if (null != shooting.ball) {
+				Vector3 direction = transform.forward;
+				float charge = Mathf.Max(Time.time - shooting.lastStartTime, shooting.shootChargeTime) / shooting.shootChargeTime;
+				shooting.ball.transform.parent = null;
+				shooting.ball.SendMessage("Shoot", direction * shooting.shootSpeed * charge);
+			}
+			shooting.inputHeld = false;
+		}
+
+		if (shooting.input && null != shooting.ball) {
+			shooting.lastStartTime = Time.time;
+		}
+	}
 
 	
 	void FixedUpdate() {

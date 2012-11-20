@@ -10,22 +10,24 @@ using System.Collections;
 @author Brian Crockford
 */
 public class GameState : MonoBehaviour {
+	public static GameState Scoreboard;
+
 	[System.Serializable]
 	public class Scores {
-		public int MaxScore = 10;
-		public int PointsPerHit = 1;
-		public int PointsPerGoal = 2;
-		[System.NonSerialized] public int Player1Score = 0;
-		[System.NonSerialized] public int Player2Score = 0;
+		public int maxScore = 10;
+		public int pointsPerHit = 1;
+		public int pointsPerGoal = 2;
+		[System.NonSerialized] public int player1Score = 0;
+		[System.NonSerialized] public int player2Score = 0;
 	}
 	public Scores scores = new Scores();
 
 
 	[System.Serializable]
 	public class GameTime {
-		public float RoundDuration = 60;
-		[System.NonSerialized] public float RoundStart = 0;
-		[System.NonSerialized] public float RoundEnd = 0;
+		public float roundDuration = 60;
+		[System.NonSerialized] public float roundStart = 0;
+		[System.NonSerialized] public float roundEnd = 0;
 	}
 	public GameTime time;
 
@@ -37,25 +39,57 @@ public class GameState : MonoBehaviour {
 	}
 	[System.NonSerialized] public StateName state = StateName.START;
 
-	public Transform Player1;
-	public Transform Player2;
-	private Vector3 Player1Position;
-	private Vector3 Player2Position;
 
+	[System.Serializable]
+	public class Players {
+		public Transform player1;
+		public Transform player2;
+		[System.NonSerialized] public Vector3 player1Position;
+		[System.NonSerialized] public Vector3 player2Position;
+	}
+	public Players players = new Players();
+
+
+	[System.Serializable]
+	public class BallInfo {
+		public Transform ball;
+		[System.NonSerialized] public Ball component;
+		[System.NonSerialized] public Vector3 ballDropPosition;
+	}
+	public BallInfo ball = new BallInfo();
 
 
 	void Awake() {
-		if (null != Player1) {
-			Player1Position = Player1.position;
+		// We're the global scoreboard
+		if (null == Scoreboard) {
+			Scoreboard = this;
+		}
+		
+		// set player 1 position
+		if (null != players.player1) {
+			players.player1Position = players.player1.position;
 		}
 		else {
 			Debug.LogError("Player 1 hasn't been set!");
 		}
-		if (null != Player2) {
-			Player2Position = Player2.position;
+		// set player 2 position
+		if (null != players.player2) {
+			players.player2Position = players.player2.position;
 		}
 		else {
 			Debug.LogError("Player 2 hasn't been set!");
+		}
+
+		// set ball position
+		if (null != ball.ball) {
+			ball.ballDropPosition = ball.ball.position;
+			ball.component = ball.ball.GetComponent<Ball>();
+			if (null != ball.component) {
+				ball.component.enabled = false;
+			}
+		}
+		else {
+			Debug.LogError("Ball hasn't been set!");
 		}
 	}
 
@@ -63,10 +97,10 @@ public class GameState : MonoBehaviour {
 	
 	void Update() {
 		if (state == StateName.PLAYING) {
-			if (Time.time > time.RoundEnd) {
+			if (Time.time > time.roundEnd) {
 				GameOver();
 			}
-			else if (scores.Player1Score > scores.MaxScore || scores.Player2Score > scores.MaxScore) {
+			else if (scores.player1Score > scores.maxScore || scores.player2Score > scores.maxScore) {
 				GameOver();
 			}
 		}
@@ -110,14 +144,14 @@ public class GameState : MonoBehaviour {
 		GUILayout.BeginArea(new Rect(0,0,Screen.width/3,Screen.height));
 		GUILayout.BeginVertical();
 		GUILayout.Label("Player 1 Score");
-		GUILayout.Label(""+ scores.Player1Score);
+		GUILayout.Label(""+ scores.player1Score);
 		GUILayout.EndVertical();
 		GUILayout.EndArea();
 
 		GUILayout.BeginArea(new Rect(Screen.width * 2/3,0,Screen.width/3,Screen.height));
 		GUILayout.BeginVertical();
 		GUILayout.Label("Player 2 Score");
-		GUILayout.Label(""+ scores.Player2Score);
+		GUILayout.Label(""+ scores.player2Score);
 		GUILayout.EndVertical();
 		GUILayout.EndArea();
 
@@ -125,7 +159,7 @@ public class GameState : MonoBehaviour {
 		GUILayout.BeginArea(new Rect(Screen.width/3,0,Screen.width/3,Screen.height));
 		GUILayout.BeginVertical();
 		GUILayout.Label("Time remaining");
-		GUILayout.Label(""+ (time.RoundEnd - Time.time) + " seconds");
+		GUILayout.Label(""+ (time.roundEnd - Time.time) + " seconds");
 		GUILayout.EndVertical();
 		GUILayout.EndArea();
 	}
@@ -137,10 +171,10 @@ public class GameState : MonoBehaviour {
 		GUILayout.BeginVertical();
 
 		GUILayout.Label("Game Over!");
-		if (scores.Player1Score == scores.Player2Score) {
+		if (scores.player1Score == scores.player2Score) {
 			GUILayout.Label("TIE!");
 		}
-		else if (scores.Player1Score > scores.Player2Score) {
+		else if (scores.player1Score > scores.player2Score) {
 			GUILayout.Label("PLAYER 1 WINS!");
 		}
 		else {
@@ -158,18 +192,22 @@ public class GameState : MonoBehaviour {
 
 
 	void NewGame() {
-		time.RoundStart = Time.time;
-		time.RoundEnd = Time.time + time.RoundDuration;
-		scores.Player1Score = 0;
-		scores.Player2Score = 0;
+		time.roundStart = Time.time;
+		time.roundEnd = Time.time + time.roundDuration;
+		scores.player1Score = 0;
+		scores.player2Score = 0;
 
 		//set player positions
-		Player1.position = Player1Position;
-		Player2.position = Player2Position;
+		players.player1.position = players.player1Position;
+		players.player2.position = players.player2Position;
 
 		//enable controls
-		Player1.SendMessage("OnEnableControls", SendMessageOptions.DontRequireReceiver);
-		Player2.SendMessage("OnEnableControls", SendMessageOptions.DontRequireReceiver);
+		players.player1.SendMessage("OnEnableControls", SendMessageOptions.DontRequireReceiver);
+		players.player2.SendMessage("OnEnableControls", SendMessageOptions.DontRequireReceiver);
+
+		//set the ball position
+		ball.ball.position = ball.ballDropPosition;
+		ball.component.enabled = true;
 
 		state = StateName.PLAYING;
 	}
@@ -177,9 +215,43 @@ public class GameState : MonoBehaviour {
 
 
 	void GameOver() {
-		Player1.SendMessage("OnDisableControls", SendMessageOptions.DontRequireReceiver);
-		Player2.SendMessage("OnDisableControls", SendMessageOptions.DontRequireReceiver);
+		players.player1.SendMessage("OnDisableControls", SendMessageOptions.DontRequireReceiver);
+		players.player2.SendMessage("OnDisableControls", SendMessageOptions.DontRequireReceiver);
+
+		//set the ball position
+		ball.component.enabled = false;
+		ball.component.SendMessage("Reset");
 
 		state = StateName.OVER;
+	}
+
+
+
+	void OnPlayerScored(int player) {
+		switch (player) {
+		case 1:
+			scores.player1Score += scores.pointsPerGoal;
+			break;
+		case 2:
+			scores.player2Score += scores.pointsPerGoal;
+			break;
+		}
+
+		ball.ball.position = ball.ballDropPosition;
+		ball.component.enabled = true;
+	}
+
+
+
+	void OnPlayerHit(int player) {
+		//this is reversed, since the player being hit isn't getting points
+		switch (player) {
+		case 1:
+			scores.player2Score += scores.pointsPerGoal;
+			break;
+		case 2:
+			scores.player1Score += scores.pointsPerGoal;
+			break;
+		}
 	}
 }

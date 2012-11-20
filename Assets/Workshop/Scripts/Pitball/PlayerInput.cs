@@ -16,6 +16,7 @@ public class PlayerInput : MonoBehaviour {
 		public string NavigationVertical	= "PlayerNVertical";
 		public string NavigationHorizontal	= "PlayerNHorizontal";
 		public string JumpButton			= "PlayerNJump";
+		public string ShootButton			= "PlayerNShoot";
 	}
 	public PlayerInputConfig	InputConfig = new PlayerInputConfig();
 
@@ -44,5 +45,6 @@ public class PlayerInput : MonoBehaviour {
 		//Set the movement parameters
 		motor.movement.inputDirection = directionVector;
 		motor.jumping.input = Input.GetButton(InputConfig.JumpButton);
+		motor.shooting.input = Input.GetButton(InputConfig.ShootButton);
 	}
 }
